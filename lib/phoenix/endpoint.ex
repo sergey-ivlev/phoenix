@@ -780,8 +780,10 @@ defmodule Phoenix.Endpoint do
 
     paths =
       if websocket do
-        triplet = {:websocket, socket, socket_config(websocket, Phoenix.Transports.WebSocket)}
-        [{socket_path(path, :websocket), triplet} | paths]
+        config = socket_config(websocket, Phoenix.Transports.WebSocket)
+        triplet = {:websocket, socket, config}
+        completed_path = Keyword.get(config, :completed_path, false)
+        [{socket_path(path, :websocket, completed_path), triplet} | paths]
       else
         paths
       end
@@ -797,8 +799,12 @@ defmodule Phoenix.Endpoint do
     paths
   end
 
-  defp socket_path(path, key) do
-    String.split(path, "/", trim: true) ++ [Atom.to_string(key)]
+  defp socket_path(path, key, completed_path \\ false) do
+    if completed_path do
+      String.split(path, "/", trim: true)
+    else
+      String.split(path, "/", trim: true) ++ [Atom.to_string(key)]
+    end
   end
 
   defp socket_config(true, module), do: module.default_config()

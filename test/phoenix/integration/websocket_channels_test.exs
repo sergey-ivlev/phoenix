@@ -130,6 +130,11 @@ defmodule Phoenix.Integration.WebSocketChannelsTest do
         timeout: 200,
         connect_info: [:x_headers, :peer_data, :uri]
       ]
+
+    socket "/ws/custom_path", UserSocket,
+      websocket: [
+        completed_path: :true
+      ]
   end
 
   setup_all do
@@ -146,6 +151,15 @@ defmodule Phoenix.Integration.WebSocketChannelsTest do
     describe "with #{vsn} serializer #{inspect serializer}" do
       test "endpoint handles multiple mount segments" do
         {:ok, sock} = WebsocketClient.start_link(self(), "ws://127.0.0.1:#{@port}/ws/admin/websocket?vsn=#{@vsn}", @serializer)
+        WebsocketClient.join(sock, "room:admin-lobby1", %{})
+        assert_receive %Message{event: "phx_reply",
+                                payload: %{"response" => %{}, "status" => "ok"},
+                                join_ref: @join_ref,
+                                ref: "1", topic: "room:admin-lobby1"}
+      end
+
+      test "endpoint handles custom path" do
+        {:ok, sock} = WebsocketClient.start_link(self(), "ws://127.0.0.1:#{@port}/ws/custom_path?vsn=#{@vsn}", @serializer)
         WebsocketClient.join(sock, "room:admin-lobby1", %{})
         assert_receive %Message{event: "phx_reply",
                                 payload: %{"response" => %{}, "status" => "ok"},
